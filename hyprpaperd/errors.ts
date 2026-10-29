@@ -15,3 +15,4 @@ export class ExecErr extends ApplicationErrs {}
 export class ParseErr extends ApplicationErrs {}
 export class ComponentErr extends ApplicationErrs {}
 export class ServiceErr extends ApplicationErrs {} 
+export class UserErr extends ApplicationErrs {}
