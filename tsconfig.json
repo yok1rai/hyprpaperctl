@@ -1,14 +1,12 @@
 {
     "compilerOptions": {
-        "rootDir": "./hyprpaperd",
-        "outDir": "./dist",
-
-        "module": "NodeNext",
-        "target": "ES2022",
-        "lib": ["ES2022"],
-        "types": ["node"],
-
-        "sourceMap": true,
+        "module": "Preserve",
+        "moduleResolution": "Bundler",
+        "target": "ESNext",
+        "lib": ["ESNext"],
+        "types": ["bun"],
+        "allowImportingTsExtensions": true,
+        "noEmit": true,
 
         "noUncheckedIndexedAccess": true,
         "exactOptionalPropertyTypes": true,
@@ -22,6 +20,6 @@
         "skipLibCheck": true
     },
 
-    "include": ["hyprpaperd/**/*.ts"],
+    "include": ["hyprpaperd/**/*.ts", "hyprpapercli/**/*.ts", "hyprpapertui/**/*.ts", "hyprpapergui/**/*.ts", "shared/**/*.ts"],
     "exclude": ["node_modules", "dist"]
 }

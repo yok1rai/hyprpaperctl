@@ -1,13 +1,13 @@
 """Shared exception types."""
 
 
-class VerErr(Exception):
+class VersionError(Exception):
     pass
 
 
-class OsErr(Exception):
+class OperatingSystemError(Exception):
     pass
 
 
-class PackageErr(Exception):
+class PackageError(Exception):
     pass

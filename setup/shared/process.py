@@ -1,19 +1,24 @@
 """Reusable command execution with quiet/verbose task UIs."""
 
 import subprocess
+import sys
 import tempfile
 import time
+from typing import TextIO
 
-from .errors import PackageErr
+from .animations import SPINNER_FRAMES, draw_task_ui
+from .colors import GREEN, YELLOW
+from .errors import PackageError
+from .styles import RESET
 from .system import request_root_privileges
-from .ui import GREEN, RESET, SPINNER, YELLOW, draw_task_ui, restore_terminal
+from .terminal import hide_cursor, restore_terminal
 
 
 def command_failure(
     label: str,
     return_code: int,
-    log_file,
-) -> PackageErr:
+    log_file: TextIO,
+) -> PackageError:
 
     log_file.flush()
     log_file.seek(0)
@@ -28,13 +33,13 @@ def command_failure(
             lines[-15:]
         )
 
-        return PackageErr(
+        return PackageError(
             f"{label} failed with exit code "
             f"{return_code}.\n\n"
             f"Last output:\n{tail}"
         )
 
-    return PackageErr(
+    return PackageError(
         f"{label} failed with exit code "
         f"{return_code}."
     )
@@ -62,13 +67,13 @@ def run_verbose_command(
         )
 
     except FileNotFoundError:
-        raise PackageErr(
+        raise PackageError(
             f"Command not found: "
             f"{command[0]}"
         )
 
     except subprocess.CalledProcessError as error:
-        raise PackageErr(
+        raise PackageError(
             f"{label} failed with exit code "
             f"{error.returncode}."
         )
@@ -127,7 +132,7 @@ def run_tasks(
                     )
 
                 except FileNotFoundError:
-                    raise PackageErr(
+                    raise PackageError(
                         f"Command not found: "
                         f"{command[0]}"
                     )
@@ -154,11 +159,7 @@ def run_tasks(
     previous_lines = 0
     spinner_index = 0
 
-    sys.stdout.write(
-        "\033[?25l"
-    )
-
-    sys.stdout.flush()
+    hide_cursor()
 
     try:
 
@@ -183,7 +184,7 @@ def run_tasks(
                     )
 
                 except FileNotFoundError:
-                    raise PackageErr(
+                    raise PackageError(
                         f"Command not found: "
                         f"{command[0]}"
                     )
@@ -195,9 +196,9 @@ def run_tasks(
                         tasks=tasks,
                         completed=completed,
                         current=label,
-                        spinner=SPINNER[
+                        spinner=SPINNER_FRAMES[
                             spinner_index
-                            % len(SPINNER)
+                            % len(SPINNER_FRAMES)
                         ],
                         previous_lines=previous_lines,
                     )

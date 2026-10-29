@@ -1,17 +1,19 @@
 import argparse
+import os
+from pathlib import Path
 import platform
 import shutil
 import subprocess
 import sys
 
-from shared.errors import OsErr, PackageErr, VerErr
+from shared.colors import GREEN, RED, YELLOW
+from shared.errors import OperatingSystemError, PackageError, VersionError
 from shared.packages import get_package_manager
 from shared.process import run_tasks
+from shared.styles import RESET
 from shared.system import privilege_prefix
-from shared.ui import (
-    GREEN, RED, RESET, YELLOW,
-    print_package_status, print_status, restore_terminal,
-)
+from shared.terminal import restore_terminal
+from shared.ui import print_package_status, print_status
 from shared.version import (
     format_version, get_python_version, get_system_python_version,
 )
@@ -48,6 +50,60 @@ def get_hyprland_version() -> tuple[int, ...] | None:
         ValueError,
     ):
         return None
+
+
+def expose_bun() -> None:
+    """Make the installer's user-local Bun visible in this process."""
+    bun_bin = Path(os.environ.get("BUN_INSTALL", str(Path.home() / ".bun"))) / "bin"
+    if (bun_bin / "bun").is_file():
+        os.environ["PATH"] = str(bun_bin) + os.pathsep + os.environ.get("PATH", "")
+
+
+def build_bun_tasks(package_manager: str) -> list[tuple[str, list[str]]]:
+    """Install the latest stable Bun with its official user-local installer."""
+    tasks = [
+        (f"Bun prerequisite: {package}", build_app_command(package_manager, package))
+        for package in ("bash", "curl", "unzip")
+        if shutil.which(package) is None
+    ]
+    tasks.append((
+        "Bun",
+        ["bash", "-o", "pipefail", "-c", "curl -fsSL https://bun.com/install | bash"],
+    ))
+    return tasks
+
+
+def get_bun_version() -> tuple[int, ...] | None: 
+    expose_bun()
+    if shutil.which("bun") is None: 
+        return None 
+
+    try: 
+        result = subprocess.run(
+            ["bun", "--version"],
+            capture_output=True, 
+            text=True, 
+            check=True
+        ) 
+
+        version = (result
+            .stdout
+            .strip() 
+            .split(".")
+        )
+
+        return tuple(
+            map(
+                int, 
+                version
+            )
+        )
+    except (
+        subprocess.CalledProcessError,
+        IndexError,
+        ValueError,
+    ):
+        return None 
 
 
 def get_hyprpaper_version() -> tuple[int, ...] | None:
@@ -91,7 +147,7 @@ def basic_requirements() -> str:
     """
 
     if platform.system() != "Linux":
-        raise OsErr(
+        raise OperatingSystemError(
             f"Unsupported operating system: "
             f"{platform.system()}. "
             "Linux is required."
@@ -102,7 +158,7 @@ def basic_requirements() -> str:
     )
 
     if package_manager is None:
-        raise PackageErr(
+        raise PackageError(
             "No supported package manager "
             "was found."
         )
@@ -127,7 +183,7 @@ def prerequisites() -> str:
         python_version
         < MIN_PYTHON_VERSION
     ):
-        raise VerErr(
+        raise VersionError(
             f"Python "
             f"{format_version(MIN_PYTHON_VERSION)} "
             "or newer is required."
@@ -159,6 +215,15 @@ def pretend() -> None:
         shutil.which("hyprpaper")
         is not None
     )
+
+    expose_bun()
+
+    bun_installed = (
+        shutil.which("bun")
+        is not None 
+    )
+
+    bun_version = get_bun_version() 
 
     hyprland_version = (
         get_hyprland_version()
@@ -231,6 +296,8 @@ def pretend() -> None:
         hyprpaper_version,
     )
 
+    print_package_status("Bun", bun_installed, bun_version)
+
     print()
 
     if (
@@ -287,6 +354,10 @@ def build_app_command(
     if package_manager == "emerge":
 
         gentoo_package = {
+            "bash": "app-shells/bash",
+            "curl": "net-misc/curl",
+            "unzip": "app-arch/unzip",
+
             "Hyprland":
                 "gui-wm/hyprland",
 
@@ -360,7 +431,7 @@ def build_app_command(
             ]
 
         case _:
-            raise PackageErr(
+            raise PackageError(
                 f"Unsupported package manager: "
                 f"{package_manager}"
             )
@@ -370,13 +441,14 @@ def build_install_tasks(
     package_manager: str,
     install_hyprland: bool,
     install_hyprpaper: bool,
+    install_bun: bool = True,
 ) -> list[tuple[str, list[str]]]:
 
     tasks = []
 
     # Current Gentoo Hypr packages are provided
     # through the Hypr overlay.
-    if package_manager == "emerge":
+    if package_manager == "emerge" and (install_hyprland or install_hyprpaper):
 
         root = privilege_prefix()
 
@@ -425,6 +497,9 @@ def build_install_tasks(
             )
         )
 
+    if install_bun:
+        tasks.extend(build_bun_tasks(package_manager))
+
     return tasks
 
 
@@ -432,7 +507,7 @@ def build_install_tasks(
 # Update Command Generation
 # ============================================================
 
-def build_update_tasks(
+def _build_system_update_tasks(
     package_manager: str,
 ) -> list[tuple[str, list[str]]]:
 
@@ -811,10 +886,14 @@ def build_update_tasks(
             ),
         ]
 
-    raise PackageErr(
+    raise PackageError(
         f"Unsupported package manager: "
         f"{package_manager}"
     )
+
+
+def build_update_tasks(package_manager: str) -> list[tuple[str, list[str]]]:
+    return _build_system_update_tasks(package_manager) + build_bun_tasks(package_manager)
 
 
 # ============================================================
@@ -827,6 +906,10 @@ def install(
 ) -> None:
 
     package_manager = prerequisites()
+
+    expose_bun()
+    bun_installed = shutil.which("bun") is not None
+    bun_version = get_bun_version()
 
     hyprland_installed = (
         shutil.which("hyprland")
@@ -857,6 +940,7 @@ def install(
     if (
         hyprland_installed
         and hyprpaper_installed
+        and bun_installed
     ):
 
         print_package_status(
@@ -871,9 +955,11 @@ def install(
             hyprpaper_version,
         )
 
+        print_package_status("Bun", True, bun_version)
+
         print(
             f"\n{GREEN}"
-            "Hyprland and Hyprpaper "
+            "Hyprland, Hyprpaper and Bun "
             "are already installed."
             f"{RESET}"
         )
@@ -895,6 +981,8 @@ def install(
         hyprpaper_installed,
         hyprpaper_version,
     )
+
+    print_package_status("Bun", bun_installed, bun_version)
 
     if verbose:
 
@@ -946,6 +1034,7 @@ def install(
         install_hyprpaper=(
             not hyprpaper_installed
         ),
+        install_bun=not bun_installed,
     )
 
     run_tasks(
@@ -968,14 +1057,18 @@ def install(
         is not None
     )
 
+    expose_bun()
+    if shutil.which("bun") is None:
+        raise PackageError("Bun could not be detected after installation.")
+
     if not hyprland_installed:
-        raise PackageErr(
+        raise PackageError(
             "Hyprland could not be detected "
             "after installation."
         )
 
     if not hyprpaper_installed:
-        raise PackageErr(
+        raise PackageError(
             "Hyprpaper could not be detected "
             "after installation."
         )
@@ -1006,6 +1099,8 @@ def update(
     old_hyprland = (
         get_hyprland_version()
     )
+
+    old_bun = get_bun_version()
 
     old_hyprpaper = (
         get_hyprpaper_version()
@@ -1038,11 +1133,13 @@ def update(
         )
     )
 
+    print(" Bun: " + (format_version(old_bun) if old_bun is not None else "not installed / unknown"))
+
     if not force:
 
         answer = input(
             "\nUpdate repositories, Python, "
-            "Hyprland and Hyprpaper? [y/N] "
+            "Hyprland, Hyprpaper and Bun? [y/N] "
         ).strip().lower()
 
         if answer not in (
@@ -1095,6 +1192,10 @@ def update(
         else None
     )
 
+    expose_bun()
+    bun_installed = shutil.which("bun") is not None
+    new_bun = get_bun_version()
+
     print(
         "\nUpdate Status:"
     )
@@ -1135,12 +1236,16 @@ def update(
         new_hyprpaper,
     )
 
+    print_package_status("Bun", bun_installed, new_bun)
+    if not bun_installed:
+        raise PackageError("The update completed, but Bun could not be detected.")
+
     if (
         system_python is None
         or system_python
         < MIN_PYTHON_VERSION
     ):
-        raise VerErr(
+        raise VersionError(
             "The update completed, but "
             f"Python "
             f"{format_version(MIN_PYTHON_VERSION)}+ "
@@ -1148,13 +1253,13 @@ def update(
         )
 
     if not hyprland_installed:
-        raise PackageErr(
+        raise PackageError(
             "The update completed, but "
             "Hyprland could not be detected."
         )
 
     if not hyprpaper_installed:
-        raise PackageErr(
+        raise PackageError(
             "The update completed, but "
             "Hyprpaper could not be detected."
         )
@@ -1186,7 +1291,7 @@ def update(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Hyprland / Hyprpaper dependency installer."
+        description="Hyprland / Hyprpaper / Bun dependency installer."
     )
 
     subparsers = parser.add_subparsers(
@@ -1197,7 +1302,7 @@ def main() -> None:
 
     install_parser = subparsers.add_parser(
         "install",
-        help="Install Hyprland and Hyprpaper.",
+        help="Install Hyprland, Hyprpaper, and Bun.",
     )
 
     install_parser.add_argument(
@@ -1216,7 +1321,7 @@ def main() -> None:
 
     update_parser = subparsers.add_parser(
         "update",
-        help="Update prerequisites, Hyprland, and Hyprpaper.",
+        help="Update prerequisites, Hyprland, Hyprpaper, and Bun.",
     )
 
     update_parser.add_argument(
@@ -1270,9 +1375,9 @@ def main() -> None:
                 pretend()
 
     except (
-        VerErr,
-        OsErr,
-        PackageErr,
+        VersionError,
+        OperatingSystemError,
+        PackageError,
     ) as error:
 
         restore_terminal()

@@ -26,7 +26,7 @@ dist/
 
 
 # =========================
-# Node / JavaScript / TypeScript
+# JavaScript / TypeScript
 # =========================
 
 node_modules/
@@ -55,13 +55,6 @@ out/
 .env
 .env.*
 !.env.example
-
-
-# =========================
-# Bun
-# =========================
-
-bun.lockb
 
 
 # =========================

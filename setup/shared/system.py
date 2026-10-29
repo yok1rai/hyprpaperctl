@@ -4,7 +4,7 @@ import os
 import shutil
 import subprocess
 
-from .errors import OsErr
+from .errors import OperatingSystemError
 
 
 def is_root() -> bool:
@@ -16,7 +16,7 @@ def privilege_prefix() -> list[str]:
         return []
 
     if shutil.which("sudo") is None:
-        raise OsErr(
+        raise OperatingSystemError(
             "Root privileges are required, "
             "but sudo was not found."
         )
@@ -36,7 +36,7 @@ def request_root_privileges() -> None:
         return
 
     if shutil.which("sudo") is None:
-        raise OsErr(
+        raise OperatingSystemError(
             "Root privileges are required, "
             "but sudo was not found."
         )
@@ -48,6 +48,6 @@ def request_root_privileges() -> None:
         )
 
     except subprocess.CalledProcessError:
-        raise OsErr(
+        raise OperatingSystemError(
             "Could not acquire root privileges."
         )
