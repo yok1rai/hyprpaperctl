@@ -1,5 +1,5 @@
 import { execute } from "../utils.js";
-import { ServiceErr } from "../errors.js";
+import { ApplicationErrs, ServiceErr } from "../errors.js";
 import type MonitorManager from "../components/monitors.js";
 import type { Wallpaper } from "../components/wallpaper.js";
 
@@ -34,8 +34,12 @@ export default class PaperMonitor {
                 throw new ServiceErr("Monitor name or wallpaper path contains an unsupported IPC delimiter");
             }
             const response = await this.command("wallpaper", `${monitor.name},${wallpaper.path}`);
-            if (response.trim().toLowerCase() !== "ok") {
-                throw new ServiceErr("Hyprpaper rejected wallpaper", response);
+            const status = response.trim().toLowerCase();
+            if (status !== "" && status !== "ok") {
+                throw new ServiceErr(
+                    `Hyprpaper rejected wallpaper: response=${JSON.stringify(response)}`,
+                    `monitor=${monitor.name}, path=${wallpaper.path}`,
+                );
             }
             return monitor.wallpapers.select(wallpaper.path);
         });
@@ -49,7 +53,10 @@ export default class PaperMonitor {
         try {
             return await this.run(args);
         } catch (error) {
-            throw new ServiceErr("Hyprpaper command failed", String(error));
+            const detail = error instanceof ApplicationErrs
+                ? [error.message, error.extra].filter(Boolean).join(": ")
+                : String(error);
+            throw new ServiceErr(`Hyprpaper command failed: ${detail}`);
         }
     }
 }
