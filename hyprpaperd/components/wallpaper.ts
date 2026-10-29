@@ -33,9 +33,13 @@ export default class WallpaperManager {
     private items: Wallpaper[] = [];
 
     private constructor(
-        public readonly targetDir: string,
+        private directory: string,
         public readonly monitorName: string,
     ) {}
+
+    get targetDir(): string {
+        return this.directory;
+    }
 
     static async create(targetDir: string, monitorName: string): Promise<WallpaperManager> {
         if (!monitorName.trim()) throw new ComponentErr("Monitor name is required");
@@ -59,12 +63,23 @@ export default class WallpaperManager {
     }
 
     async refresh(): Promise<void> {
+        this.items = await this.scan(this.directory);
+    }
+
+    async changeDirectory(targetDir: string): Promise<void> {
+        const directory = path.resolve(targetDir);
+        const items = await this.scan(directory);
+        this.directory = directory;
+        this.items = items;
+    }
+
+    private async scan(targetDir: string): Promise<Wallpaper[]> {
         try {
-            const stat = await fs.stat(this.targetDir);
+            const stat = await fs.stat(targetDir);
             if (!stat.isDirectory()) {
-                throw new ComponentErr("Target is not a directory", this.targetDir, true);
+                throw new ComponentErr("Target is not a directory", targetDir, true);
             }
-            const entries = await fs.readdir(this.targetDir, { withFileTypes: true });
+            const entries = await fs.readdir(targetDir, { withFileTypes: true });
             const selectedPath = this.current?.path;
             const items: Wallpaper[] = [];
             let id = 0;
@@ -72,7 +87,7 @@ export default class WallpaperManager {
             for (const entry of entries) {
                 const extension = path.extname(entry.name).slice(1).toLowerCase();
                 if (!entry.isFile() || !isExtension(extension)) continue;
-                const fullPath = path.join(this.targetDir, entry.name);
+                const fullPath = path.join(targetDir, entry.name);
                 items.push({
                     id: id++,
                     monitorName: this.monitorName,
@@ -82,7 +97,7 @@ export default class WallpaperManager {
                     current: fullPath === selectedPath,
                 });
             }
-            this.items = items;
+            return items;
         } catch (error) {
             if (error instanceof ComponentErr) throw error;
             throw new ComponentErr("Failed to read wallpaper directory", String(error), true);

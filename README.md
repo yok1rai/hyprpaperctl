@@ -21,9 +21,9 @@ Development uses Bun to install dependencies and run TypeScript directly:
 ```sh
 bun install
 bun run typecheck
-bun run start
+bun run start /path/to/wallpapers
 ```
 
-Use `bun run dev` to restart automatically when source files change. The daemon entry point is currently a placeholder, so starting it exits without running a service.
+Use `bun run dev /path/to/wallpapers` to restart automatically when source files change. Hyprland and hyprpaper must be running. The daemon listens on `/tmp/hyprpaperd.sock` and closes its socket and client connections on SIGINT or SIGTERM. An existing socket address causes startup to fail instead of replacing another daemon.
 
 Commit `bun.lock` when dependencies change. For a reproducible install, run `bun install --frozen-lockfile`.

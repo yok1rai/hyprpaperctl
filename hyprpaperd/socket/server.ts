@@ -1,4 +1,3 @@
-import fs from "node:fs/promises";
 import net from "node:net";
 import { sep } from "../utils";
 import { ParseErr, UserErr } from "../errors";
@@ -8,8 +7,6 @@ import PaperMonitor from "../services/hyprpaper";
 export const socketPath = "/tmp/hyprpaperd.sock"; 
 
 export async function createserver(): Promise<net.Server> {
-    if (await fs.exists(socketPath))
-        await fs.unlink(socketPath)
     return net.createServer(_ => {
         console.log(`[${new Date()}] Client Connected`); 
     }); 
@@ -86,6 +83,19 @@ export async function run(
                         const wallpaper = await paperM.apply(monitorName, id); 
                         console.log(`[${new Date()}] ${wallpaper.name} applied to ${monitorName}`); 
                         break; 
+                    }
+                    case 'change-directory': {
+                        const monitorName = line[1];
+                        const targetDir = line[2];
+                        if (line.length !== 3 || !monitorName || !targetDir?.trim()) {
+                            throw new UserErr("Usage: change-directory <monitor> <directory>");
+                        }
+                        const monitor = monitorM.get(monitorName);
+                        await monitor.wallpapers.changeDirectory(targetDir);
+                        if (!socket.destroyed && socket.writable) {
+                            socket.write(`OK: ${monitorName} wallpaper directory changed to ${monitor.wallpapers.targetDir}\n`);
+                        }
+                        break;
                     }
                     case 'refresh-monitors': {
                         await monitorM.refresh(); 
