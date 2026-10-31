@@ -15,7 +15,7 @@ class Runit:
         self.layout = layout
         self.system = installation.scope == "system"
         self.service = layout.service(installation).parent
-        self.link = Path(installation.runit_active) / "hyprpaperd"
+        self.link = Path(installation.runit_active) / "wallpaperd"
 
     def files(self):
         command = f"/bin/sh {shlex.quote(str(self.layout.launcher))}"

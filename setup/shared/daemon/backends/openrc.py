@@ -14,21 +14,21 @@ class OpenRC:
 
     def files(self):
         identity = ""
-        pidfile = '"${XDG_RUNTIME_DIR}/hyprpaperctl.pid"'
+        pidfile = '"${XDG_RUNTIME_DIR}/wallpaperd.pid"'
         if self.system:
             identity = f"command_user={shlex.quote(self.installation.user + ':' + self.installation.group)}\n"
-            pidfile = '"/run/hyprpaperd.pid"'
+            pidfile = '"/run/wallpaperd.pid"'
         logs = self.layout.log_directory(self.installation)
         text = (
             "#!/sbin/openrc-run\n"
-            'description="HyprPaperCTL daemon"\n'
+            'description="wallpaper daemon"\n'
             'supervisor="supervise-daemon"\n'
             'command="/bin/sh"\n'
-            f"command_args={shlex.quote(shlex.quote(str(self.layout.launcher)))}\n"
+            f"command_args_foreground={shlex.quote(shlex.quote(str(self.layout.launcher)))}\n"
             f"{identity}pidfile={pidfile}\n"
             f"output_log={shlex.quote(shlex.quote(str(logs / 'output.log')))}\n"
             f"error_log={shlex.quote(shlex.quote(str(logs / 'error.log')))}\n"
-            'respawn_delay="3"\n'
+            'respawn_delay="30"\n'
         )
         return [ServiceFile(self.layout.service(self.installation), text, 0o755, self.system)]
 
@@ -36,7 +36,7 @@ class OpenRC:
         args = ["rc-service"]
         if not self.system:
             args.append("--user")
-        operations.command([*args, "hyprpaperd", action], self.system)
+        operations.command([*args, "wallpaperd", action], self.system)
 
     def installed(self, operations: Operations):
         logs = self.layout.log_directory(self.installation)

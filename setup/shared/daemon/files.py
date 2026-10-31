@@ -37,7 +37,7 @@ class Operations:
                 self.command(["install", "-D", "-m", f"{file.mode:o}", temporary.name, str(file.path)], True)
             return
         file.path.parent.mkdir(parents=True, exist_ok=True)
-        descriptor, temporary = tempfile.mkstemp(dir=file.path.parent, prefix=".hyprpaperctl-")
+        descriptor, temporary = tempfile.mkstemp(dir=file.path.parent, prefix=".wallpaper-")
         try:
             with os.fdopen(descriptor, "w", encoding="utf8") as stream:
                 os.fchmod(stream.fileno(), file.mode)

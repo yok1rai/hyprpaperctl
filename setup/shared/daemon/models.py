@@ -62,7 +62,7 @@ class Layout:
 
     @property
     def root(self):
-        return self.state_home / "hyprpaperctl"
+        return self.state_home / "wallpaper"
 
     @property
     def settings(self):
@@ -78,22 +78,22 @@ class Layout:
 
     def log_directory(self, installation: Installation) -> Path:
         if installation.manager == "openrc" and installation.scope == "system":
-            return Path("/var/log/hyprpaperd")
+            return Path("/var/log/wallpaperd")
         return self.root / "logs"
 
     def service(self, installation: Installation) -> Path:
         match installation.manager, installation.scope:
             case "systemd", "system":
-                return Path("/etc/systemd/system/hyprpaperd.service")
+                return Path("/etc/systemd/system/wallpaperd.service")
             case "systemd", "user":
-                return self.config_home / "systemd/user/hyprpaperd.service"
+                return self.config_home / "systemd/user/wallpaperd.service"
             case "openrc", "system":
-                return Path("/etc/init.d/hyprpaperd")
+                return Path("/etc/init.d/wallpaperd")
             case "openrc", "user":
-                return self.config_home / "rc/init.d/hyprpaperd"
+                return self.config_home / "rc/init.d/wallpaperd"
             case "runit", "system":
-                return Path("/etc/sv/hyprpaperd/run")
+                return Path("/etc/sv/wallpaperd/run")
             case "runit", "user":
-                return self.root / "runit/hyprpaperd/run"
+                return self.root / "runit/wallpaperd/run"
             case _:
                 raise ValueError("Unsupported service manager or scope.")

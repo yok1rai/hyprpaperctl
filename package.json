@@ -1,20 +1,20 @@
 {
-  "name": "hyprpaperctl",
+  "name": "wallpaper",
   "version": "1.0.0",
-  "description": "",
-  "private": true,
-  "module": "hyprpaperd/daemon.ts",
-  "scripts": {
-    "start": "bun run hyprpaperd/daemon.ts",
-    "dev": "bun --watch hyprpaperd/daemon.ts",
-    "typecheck": "tsc --noEmit"
-  },
-  "keywords": [],
   "author": "",
-  "license": "ISC",
-  "type": "module",
+  "module": "wallpaperd/daemon.ts",
   "devDependencies": {
     "@types/bun": "latest",
     "typescript": "^5.9.3"
-  }
+  },
+  "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "private": true,
+  "scripts": {
+    "start": "bun run wallpaperd/daemon.ts",
+    "dev": "bun --watch wallpaperd/daemon.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module"
 }

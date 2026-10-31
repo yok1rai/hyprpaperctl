@@ -1,25 +1,31 @@
 {
-    "compilerOptions": {
-        "module": "Preserve",
-        "moduleResolution": "Bundler",
-        "target": "ESNext",
-        "lib": ["ESNext"],
-        "types": ["bun"],
-        "allowImportingTsExtensions": true,
-        "noEmit": true,
+  "compilerOptions": {
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "target": "ESNext",
+    "lib": ["ESNext"],
+    "types": ["bun"],
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
 
-        "noUncheckedIndexedAccess": true,
-        "exactOptionalPropertyTypes": true,
-        "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
 
-        "strict": true,
-        "verbatimModuleSyntax": true,
-        "isolatedModules": true,
-        "noUncheckedSideEffectImports": true,
-        "moduleDetection": "force",
-        "skipLibCheck": true
-    },
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true
+  },
 
-    "include": ["hyprpaperd/**/*.ts", "hyprpapercli/**/*.ts", "hyprpapertui/**/*.ts", "hyprpapergui/**/*.ts", "shared/**/*.ts"],
-    "exclude": ["node_modules", "dist"]
+  "include": [
+    "wallpaperd/**/*.ts",
+    "wallpapercli/**/*.ts",
+    "wallpapertui/**/*.ts",
+    "wallpapergui/**/*.ts",
+    "shared/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
 }

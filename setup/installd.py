@@ -11,7 +11,7 @@ from shared.daemon.models import MANAGERS, Installation, Layout, detect_manager
 
 
 def arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Install and manage the HyprPaperCTL daemon.")
+    parser = argparse.ArgumentParser(description="Install and manage the wallpaper daemon.")
     parser.add_argument("action", choices=("install", "uninstall", "start", "stop", "restart", "status", "supervise"))
     parser.add_argument("--manager", choices=MANAGERS)
     parser.add_argument("--scope", choices=("user", "system"), help="Installation scope (default: user).")

@@ -21,10 +21,10 @@ class Systemd:
             identity = f"User={self.installation.user}\nGroup={self.installation.group}\n"
             session = ""
         text = (
-            f"[Unit]\nDescription=HyprPaperCTL daemon\n{session}\n"
+            f"[Unit]\nDescription=wallpaper daemon\n{session}\n"
             f"[Service]\nType=simple\n{identity}"
             f"ExecStart=/bin/sh {quote(str(self.layout.launcher))}\n"
-            "StandardOutput=journal\nStandardError=journal\nSyslogIdentifier=hyprpaperd\n"
+            "StandardOutput=journal\nStandardError=journal\nSyslogIdentifier=wallpaperd\n"
             "Restart=on-failure\nRestartSec=3\nTimeoutStopSec=10\nUMask=0077\n"
         )
         return [ServiceFile(self.layout.service(self.installation), text, 0o644, self.system)]
@@ -35,7 +35,7 @@ class Systemd:
             args.append("--user")
         args.append(action)
         if action != "daemon-reload":
-            args.append("hyprpaperd.service")
+            args.append("wallpaperd.service")
         operations.command(args, self.system)
 
     def installed(self, operations: Operations):

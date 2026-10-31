@@ -39,6 +39,6 @@ def render_launcher(installation: Installation, layout: Layout) -> ServiceFile:
         ': "${XDG_RUNTIME_DIR:?Missing XDG_RUNTIME_DIR}"\n'
         ': "${HYPRLAND_INSTANCE_SIGNATURE:?Missing Hyprland session}"\n'
         f"{log}cd {q(installation.project)}\n"
-        f"exec {q(installation.bun)} run {q(str(installation.project + '/hyprpaperd/daemon.ts'))} {q(installation.directory)}\n"
+        f"exec {q(installation.bun)} run {q(str(installation.project + '/wallpaperd/daemon.ts'))} {q(installation.directory)}\n"
     )
     return ServiceFile(layout.launcher, text)

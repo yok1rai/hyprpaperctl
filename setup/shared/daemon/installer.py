@@ -36,7 +36,7 @@ class DaemonInstaller:
             active = Path(installation.runit_active)
             if not active.is_dir():
                 raise ValueError("Runit active directory not found; pass --runit-service-dir.")
-            link = active / "hyprpaperd"
+            link = active / "wallpaperd"
             if link.exists() or link.is_symlink():
                 raise ValueError(f"Service already registered: {link}")
         if not self.operations.dry_run:
