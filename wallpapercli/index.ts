@@ -4,8 +4,44 @@ import net from "node:net";
 import { createInterface } from "node:readline";
 import { stdin, stdout } from "node:process";
 import { argv } from "node:process";
+import { spawn } from "node:child_process";
+import {UserErr} from "../wallpaperd/errors";
+
 
 const rl = createInterface(stdin, stdout); 
+
+const version = "1.0.0"; 
+
+const helpMessage = `wallpaper ${version} handbook
+COMMANDS
+    list-monitors                   List available monitors 
+    list-wallappers <monitor>       List detected wallpapers in a monitor. Expects a target monitor
+    set-wallpaper <monitor> <ID>    Set a monitor's wallpaper. Expects a target monitor and ID of wallpaper 
+    refresh-monitors                Refresh all monitors 
+    refresh-walllpapers             Refresh wallpapers in all monitors 
+    auto-continue <off/number>      Automatically switch to the next wallpaper in a certain second. You can disale it with \`off\`          
+
+REPL COMMANDS 
+    .help       Display help menu 
+    .version    Display the current version
+    .exit       Exit the REPL mode`;
+
+
+async function isRunning(processName: string): Promise<boolean> {
+    return new Promise((resolve) => {
+        const process = spawn("pgrep", ["-x", processName], {
+            stdio: "ignore",
+        });
+
+        process.on("close", (code) => {
+            resolve(code === 0);
+        });
+
+        process.on("error", () => {
+            resolve(false);
+        });
+    });
+}
 
 function send(location: string, commands: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -17,6 +53,9 @@ function send(location: string, commands: string[]): Promise<string> {
         const client = net.createConnection(location, () => {
             try {
                 switch (commands[0]) {
+                    case '--help': 
+                        console.log(helpMessage); 
+                        break; 
                     case "auto-continue":
                         if (commands.length > 2 || (commands[1] !== undefined && commands[1] !== "off" && !/^\d+$/.test(commands[1])))
                             throw new ApplicationErrs("Usage: auto-continue [<seconds>|off]");
@@ -36,7 +75,7 @@ function send(location: string, commands: string[]): Promise<string> {
                         client.write(`list-wallpapers ${commands[1]}\n`);
                         break;
 
-                    case "set-wallpapers":
+                    case "set-wallpaper":
                         if (commands.length < 3)
                             throw new ApplicationErrs(
                                 "Usage: set-wallpapers <monitor> <wallpaper-id>"
@@ -62,7 +101,7 @@ function send(location: string, commands: string[]): Promise<string> {
                         client.write("refresh-monitors\n");
                         break;
 
-                    case "refresh-wallpaper":
+                    case "refresh-wallpapers":
                         client.write("refresh-wallpapers\n");
                         break;
 
@@ -90,6 +129,8 @@ async function main() {
     let repl = false; 
     const args = argv.slice(2); 
     try {
+        if (!process.env.HYPRLAND_INSTANCE_SIGNATURE  || !(await isRunning("hyprpaper")))
+            throw new UserErr("hyprland or hyprpaper not running", undefined, true); 
         if (args.length === 0) {
             repl = true; 
         } 
@@ -106,10 +147,10 @@ async function main() {
                                 console.log("goodbye!"); 
                                 return; 
                             case '.help': 
-                                console.log("will be implemented"); 
+                                console.log(helpMessage); 
                                 break; 
                             case '.version': 
-                                console.log("v0.1.0"); 
+                                console.log(version); 
                                 break; 
                             default: 
                                 console.error("invalid special command"); 
