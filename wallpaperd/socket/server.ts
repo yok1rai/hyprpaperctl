@@ -1,3 +1,4 @@
+import type AutoContinue from "../services/auto-continue.js";
 import net from "node:net";
 import { sep } from "../utils";
 import { ParseErr, UserErr } from "../errors";
@@ -19,6 +20,7 @@ export async function run(
   monitorM: MonitorManager,
   paperM: PaperMonitor,
   onError: ErrorHandler,
+  autoContinue: AutoContinue,
 ): Promise<void> {
   server.on("error", onError);
 
@@ -42,6 +44,17 @@ export async function run(
         }
 
         switch (line[0]) {
+          case "auto-continue": {
+            if (line.length > 2 || (line[1] !== undefined && line[1] !== "off" && !/^\d+$/.test(line[1]))) {
+              throw new UserErr("Usage: auto-continue [<seconds>|off]");
+            }
+            if (line[1] !== undefined) {
+              autoContinue.configure(line[1] === "off" ? null : Number(line[1]));
+            }
+            socket.end(`OK: Auto-continue ${autoContinue.status}\n`);
+            break;
+          }
+
           case "list-monitor": {
             const monitors = monitorM.monitors;
 

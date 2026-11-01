@@ -1,3 +1,4 @@
+import AutoContinue from "./services/auto-continue.js";
 import fs from "node:fs/promises";
 import type net from "node:net";
 import MonitorManager from "./components/monitors.js";
@@ -27,7 +28,7 @@ export async function startDaemon(targetDir: string, address = socketPath) {
           })
         : Promise.resolve();
       for (const client of clients) client.destroy();
-      await closed;
+      await Promise.all([closed, autoContinue.stop()]);
     })();
     return stopping;
   };
@@ -40,11 +41,13 @@ export async function startDaemon(targetDir: string, address = socketPath) {
     }
   };
 
+  const autoContinue = new AutoContinue(monitorM, paperM, handleError);
+
   server.on("connection", (client) => {
     clients.add(client);
     client.once("close", () => clients.delete(client));
   });
-  await run(server, monitorM, paperM, handleError);
+  await run(server, monitorM, paperM, handleError, autoContinue);
 
   try {
     await new Promise<void>((resolve, reject) => {
@@ -66,8 +69,9 @@ export async function startDaemon(targetDir: string, address = socketPath) {
     throw error;
   }
 
+  autoContinue.configure(300);
   console.log(`[${new Date().toISOString()}] Listening on ${address}`);
-  return { server, monitorM, paperM, stop };
+  return { server, monitorM, paperM, autoContinue, stop };
 }
 
 async function main(): Promise<void> {

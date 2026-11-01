@@ -89,3 +89,24 @@ Daemon output destinations are explicit:
 OpenRC uses `output_log` and `error_log` in its generated service script. Runit redirects the daemon output after switching to the desktop user. Its supervisor's own messages still go to the supervisor output. The default state directory is `~/.local/state`. Logs are kept on uninstall.
 
 For systemd, read logs with `journalctl --user -u wallpaperd.service -f` in user scope or `sudo journalctl -u wallpaperd.service -f` in system scope. Installation and session data stay under `$XDG_STATE_HOME/wallpaper`, even in system scope.
+
+## Automatic wallpaper rotation
+
+The daemon advances every monitor to the next wallpaper every 300 seconds by default.
+It follows the loaded filename order and wraps from the last wallpaper to the first.
+With no wallpaper selected, the first tick selects the first image. Empty lists are
+skipped; a single selected image is left in place. Failed changes are logged and
+retried on the next tick without preventing other monitors from advancing.
+
+Control rotation through the CLI (also available in REPL mode):
+
+```sh
+bun run wallpapercli/index.ts auto-continue       # Show status
+bun run wallpapercli/index.ts auto-continue 60    # Advance every 60 seconds
+bun run wallpapercli/index.ts auto-continue off   # Disable rotation
+```
+
+Intervals must be whole seconds from 1 to 2147483. Changes restart the timer and
+apply to all monitors. Settings last until daemon shutdown; restarting restores
+the 300-second default. Manual wallpaper changes determine the next image without
+resetting the timer. The next tick uses refreshed lists and directory changes.

@@ -17,6 +17,12 @@ function send(location: string, commands: string[]): Promise<string> {
         const client = net.createConnection(location, () => {
             try {
                 switch (commands[0]) {
+                    case "auto-continue":
+                        if (commands.length > 2 || (commands[1] !== undefined && commands[1] !== "off" && !/^\d+$/.test(commands[1])))
+                            throw new ApplicationErrs("Usage: auto-continue [<seconds>|off]");
+                        client.write(`auto-continue${commands[1] === undefined ? "" : ` ${commands[1]}`}\n`);
+                        break;
+
                     case "list-monitors":
                         client.write("list-monitor\n");
                         break;
